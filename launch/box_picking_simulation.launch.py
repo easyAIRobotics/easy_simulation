@@ -1,5 +1,8 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import (
+    SetEnvironmentVariable,
+    DeclareLaunchArgument, IncludeLaunchDescription, ExecuteProcess, OpaqueFunction
+)
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from launch.substitutions import Command, LaunchConfiguration, PathJoinSubstitution, FindExecutable
@@ -7,6 +10,57 @@ from launch.substitutions import Command, LaunchConfiguration, PathJoinSubstitut
 import os
 from ament_index_python.packages import get_package_share_directory
 
+
+def world_launch_setup(context, *args, **kwargs):
+    world_name = LaunchConfiguration("world_name").perform(context)
+    world_file_xacro = os.path.join(
+        get_package_share_directory("easy_simulation"), "worlds", f"{world_name}.sdf.xacro"
+    )
+    
+    world_file_sdf = os.path.join(
+        get_package_share_directory("easy_simulation"), "worlds", f"{world_name}.sdf"
+    )
+    
+    # Process the xacro file to generate the sdf file
+    xacro_command = ExecuteProcess(
+        cmd=[
+            "ros2",
+            "run",
+            "xacro",
+            "xacro",
+            world_file_xacro,
+            "-o",
+            world_file_sdf,
+        ],
+        output="screen",
+    )
+    
+    # ------------------
+    # Launch Gazebo
+    # ------------------
+    gazebo = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([
+            os.path.join(
+                get_package_share_directory("ros_gz_sim"), "launch", "gz_sim.launch.py"
+            )
+        ]),
+        launch_arguments={
+            "gz_args": [" -r -v 4 ", world_file_sdf],
+        }.items(),
+    )
+    
+    # gz_server = IncludeLaunchDescription(
+    #     PythonLaunchDescriptionSource([
+    #         os.path.join(
+    #             get_package_share_directory("ros_gz_sim"), "launch", "gz_server.launch.py"
+    #         )
+    #     ]),
+    #     launch_arguments={
+    #         "world_sdf_file": world_file_sdf,
+    #     }.items(),
+    # )
+
+    return [xacro_command, gazebo]
 
 def generate_launch_description():
 
@@ -18,9 +72,19 @@ def generate_launch_description():
         default_value="true",
         description="Use simulation time",
     )
-
-    world_file = os.path.join(
-        get_package_share_directory("easy_simulation"), "worlds", "box_picking_desk.sdf"
+    
+    world_name = DeclareLaunchArgument(
+        "world_name",
+        default_value="box_picking_desk",
+        description="World file name to load",
+    )
+    
+    # ------------------
+    # Set gazebo model path
+    # ------------------
+    gazebo_models_path = SetEnvironmentVariable(
+        'GZ_SIM_RESOURCE_PATH',
+        PathJoinSubstitution([get_package_share_directory("easy_simulation"), 'worlds', 'models'])
     )
 
     robot_description_file = os.path.join(
@@ -48,20 +112,6 @@ def generate_launch_description():
     )
 
     # ------------------
-    # Launch Gazebo
-    # ------------------
-    gazebo = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([
-            os.path.join(
-                get_package_share_directory("ros_gz_sim"), "launch", "gz_sim.launch.py"
-            )
-        ]),
-        launch_arguments={
-            "gz_args": [" -r -v 4 ", world_file],
-        }.items(),
-    )
-
-    # ------------------
     # Spawn Robot in Gazebo
     # ------------------
     spawn_entity = Node(
@@ -74,32 +124,6 @@ def generate_launch_description():
         ],
     )
 
-    # ------------------
-    # Spawn ros2_control
-    # ------------------
-    controller_manager = Node(
-        package="controller_manager",
-        executable="ros2_control_node",
-        parameters=[
-            {"robot_description": robot_description_content}
-        ],
-        output="screen",
-    )
-
-    joint_state_broadcaster = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=["joint_state_broadcaster", "--controller-manager", "controller_manager"],
-        output="screen",
-    )
-
-    kinova_arm_controller = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=["kinova_arm_controller", "--controller-manager", "controller_manager"],
-        output="screen",
-    )
-
     ros_gz_bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
@@ -110,17 +134,18 @@ def generate_launch_description():
         arguments=[
             f'/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
             f'joint_states@sensor_msgs/msg/JointState[gz.msgs.Model',
+            f'/camera/image@sensor_msgs/msg/Image[gz.msgs.Image',
+            f'/camera/depth_image@sensor_msgs/msg/Image[gz.msgs.Image',
+            f'/camera/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo',
         ],
     )
 
     return LaunchDescription([
         use_sim_time,
-
-        # robot_state_publisher,
-        gazebo,
-        # controller_manager,
-        # joint_state_broadcaster,
-        # kinova_arm_controller,
+        world_name,
+        gazebo_models_path,
+        robot_state_publisher,
+        OpaqueFunction(function=world_launch_setup),
         spawn_entity,
         ros_gz_bridge,
     ])

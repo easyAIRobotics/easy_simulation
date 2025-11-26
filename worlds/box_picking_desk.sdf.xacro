@@ -1,4 +1,6 @@
-<sdf version='1.10'>
+<?xml version="1.0"?>
+<sdf version='1.10'
+    xmlns:xacro="http://ros.org/wiki/xacro">
   <world name='empty'>
     <physics name='1ms' type='ignored'>
       <max_step_size>0.01</max_step_size>
@@ -9,6 +11,7 @@
     <plugin name='gz::sim::systems::UserCommands' filename='gz-sim-user-commands-system'/>
     <plugin name='gz::sim::systems::SceneBroadcaster' filename='gz-sim-scene-broadcaster-system'/>
     <plugin name='gz::sim::systems::Contact' filename='gz-sim-contact-system'/>
+    <plugin filename="libros_gz_sim.so" name="ros_gz_sim"/>
     <gravity>0 0 -9.8000000000000007</gravity>
     <magnetic_field>5.5644999999999998e-06 2.2875799999999999e-05 -4.2388400000000002e-05</magnetic_field>
     <atmosphere type='adiabatic'/>
@@ -250,7 +253,7 @@
         </inertial>
         <enable_wind>false</enable_wind>
       </link>
-      <pose>0 0 0 0 0 1.57079</pose>
+      <pose>0 0 0 0 0 1.5707900000000004</pose>
       <self_collide>false</self_collide>
     </model>
     <model name='Table_0'>
@@ -437,9 +440,29 @@
         </inertial>
         <enable_wind>false</enable_wind>
       </link>
-      <pose>0.8 0.0 0 0 0 1.57079</pose>
+      <pose>0.80000000000000004 0 0 0 0 1.5707900000000004</pose>
       <self_collide>false</self_collide>
     </model>
+
+    <xacro:macro name="box" params="name origin">
+      <include>
+        <uri>file:///$(find easy_simulation)/worlds/models/cardboard_box</uri>
+        <name>${name}</name>
+        <pose>${origin}</pose>
+      </include>
+    </xacro:macro>
+
+    <xacro:macro name="target_box" params="name origin">
+      <include>
+        <uri>file:///$(find easy_simulation)/worlds/models/cardboard_box_green</uri>
+        <name>${name}</name>
+        <pose>${origin}</pose>
+      </include>
+    </xacro:macro>
+
+    <xacro:box name="box1" origin="0.87095397710800171 -0.021143499761819839 1.1649983722855026 0 0 0" />
+    <xacro:target_box name="target_box1" origin="0.87095397710800171 -0.5 1.1649983722855026 0 0 0" />
+
     <light name='sun' type='directional'>
       <pose>0 0 10 0 0 0</pose>
       <cast_shadows>true</cast_shadows>
