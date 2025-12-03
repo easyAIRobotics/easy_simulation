@@ -8,6 +8,19 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
 
+find_package(gz_sim_vendor REQUIRED)
+find_package(gz-sim REQUIRED)
+
+find_package(gz_plugin_vendor REQUIRED)
+find_package(gz-plugin REQUIRED)
+
+find_package(gz_common_vendor REQUIRED)
+find_package(gz-common REQUIRED)
+
+include_directories(
+  include
+)
+
 # Install Python executable scripts
 install(
   PROGRAMS
@@ -18,6 +31,34 @@ install(
 install(
   DIRECTORY config launch urdf worlds
   DESTINATION share/${PROJECT_NAME}
+)
+
+# Install Gazebo plugins
+add_library(easy_simulation_plugins SHARED
+  src/suction_gripper_gazebo.cpp
+)
+set_property(TARGET easy_simulation_plugins PROPERTY CXX_STANDARD 17)
+
+target_link_libraries(easy_simulation_plugins
+  PUBLIC
+  gz-sim::gz-sim
+  gz-plugin::register
+)
+
+target_include_directories(easy_simulation_plugins PUBLIC
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+)
+
+# Install headers
+install(DIRECTORY include/
+  DESTINATION include/${PROJECT_NAME}
+)
+
+install(TARGETS easy_simulation_plugins
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
 )
 
 if(BUILD_TESTING)
@@ -31,5 +72,8 @@ if(BUILD_TESTING)
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 endif()
+
+ament_export_include_directories(include)
+ament_export_libraries(easy_simulation_plugins)
 
 ament_package()

@@ -8,11 +8,21 @@
     <xacro:macro name="rgbd_camera" params="parent_link name prefix *origin">
         <!-- Camera link -->
         <link name="${prefix}${name}_frame">
-            <!-- <visual>
+            <visual>
                 <geometry>
-                    <box size="0.05 0.05 0.05" />
+                    <mesh filename="file://$(find easy_simulation)/urdf/zed2.stl" />
                 </geometry>
-            </visual> -->
+                <material name="dark_gray">
+                    <ambient>0.05 0.05 0.05 1</ambient>
+                    <diffuse>0.05 0.05 0.05 1</diffuse>
+                    <specular>0.01 0.01 0.01 1</specular>
+                    <pbr type="metal">
+                        <albedo>0.05 0.05 0.05 1</albedo>
+                        <metalness>0.2</metalness>
+                        <roughness>0.9</roughness>
+                    </pbr>
+                </material>
+            </visual>
         </link>
 
         <!-- Fixed joint connecting camera to parent -->

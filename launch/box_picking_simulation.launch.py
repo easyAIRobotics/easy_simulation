@@ -137,6 +137,7 @@ def generate_launch_description():
             f'/camera/image@sensor_msgs/msg/Image[gz.msgs.Image',
             f'/camera/depth_image@sensor_msgs/msg/Image[gz.msgs.Image',
             f'/camera/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo',
+            f'/cmd_suction@std_msgs/msg/Bool]gz.msgs.Boolean',
         ],
     )
 

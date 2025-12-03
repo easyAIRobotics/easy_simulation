@@ -25,7 +25,7 @@
   <xacro:arg name="fake_sensor_commands" default="false" />
   <xacro:arg name="sim_gazebo" default="true" />
   <xacro:arg name="sim_isaac" default="false" />
-  <xacro:arg name="gazebo_renderer" default="ogre"/>
+  <xacro:arg name="gazebo_renderer" default="ogre2"/>
   <xacro:arg name="simulation_controllers" default="$(find easy_kinova_g3l_moveit_config)/config/ros2_controllers.yaml" />
   <xacro:arg name="moveit_active" default="false"/>
 
@@ -96,43 +96,7 @@
   </xacro:rgbd_camera>
 
   <!-- Suction gripper URDF inclusion -->
-  <link name="$(arg prefix)suction_gripper_base">
-    <inertial>
-      <mass value="0.2" />
-      <origin xyz="0 0 0" rpy="0 0 0" />
-      <inertia
-        ixx="0.0001" ixy="0.0" ixz="0.0"
-        iyy="0.0001" iyz="0.0"
-        izz="0.0001" />
-    </inertial>
-    <visual>
-      <origin xyz="0 0 0" rpy="0 0 0" />
-      <geometry>
-        <mesh filename="file://$(find easy_simulation)/urdf/suction_gripper.stl" scale="0.5 0.5 0.5" />
-      </geometry>
-      <material name="gray">
-        <color rgba="0.5 0.5 0.5 1.0" />
-      </material>
-    </visual>
-    <collision>
-      <origin xyz="0 0 .05" rpy="0 0 0" />
-      <geometry>
-        <box size="0.12 0.05 0.08" />
-      </geometry>
-    </collision>
-  </link>
-
-  <joint name="$(arg prefix)suction_gripper_joint" type="fixed">
-    <parent link="$(arg prefix)end_effector_link" />
-    <child link="$(arg prefix)suction_gripper_base" />
-    <origin xyz="0 0 0.03" rpy="0 0 0" />
-  </joint>
-
-  <link name="virtual_suction_tip" />
-  <joint name="virtual_suction_tip_joint" type="fixed">
-    <parent link="$(arg prefix)suction_gripper_base" />
-    <child link="virtual_suction_tip" />
-    <origin xyz="0 0 0.1" rpy="0 0 0" />
-  </joint>
+  <xacro:include filename="$(find easy_simulation)/urdf/suction_gripper.urdf.xacro" />
+  <xacro:suction_gripper prefix="$(arg prefix)" />
 
 </robot>
